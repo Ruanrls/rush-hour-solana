@@ -12,7 +12,7 @@ const WalletConnect = dynamic(
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center">
+    <main className="flex min-h-screen flex-col items-center pt-24">
       <WalletConnect />
 
       <div className="mt-4">

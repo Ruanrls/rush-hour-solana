@@ -10,8 +10,6 @@ import Card from "../card";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
-import { connect } from "http2";
-import { sendAndConfirmTransaction } from "@solana/web3.js";
 
 export default function Solver() {
   const toast = useToast();
