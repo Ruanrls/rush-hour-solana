@@ -3,42 +3,75 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { solvePuzzle } from "@/lib/api";
+import { createSolvePuzzleTransaction, parsePuzzleResponse } from "./actions";
 import { LoaderCircleIcon } from "lucide-react";
 import { useState } from "react";
 import Card from "../card";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { connect } from "http2";
+import { sendAndConfirmTransaction } from "@solana/web3.js";
 
 export default function Solver() {
   const toast = useToast();
+  const { connection } = useConnection();
+  const { publicKey, signTransaction } = useWallet();
 
   const [board, setBoard] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [solution, setSolution] = useState<string[]>([]);
 
   const handleSolve = async () => {
+    if (!publicKey) {
+      return toast.toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please connect your wallet",
+      });
+    }
+
     try {
       setLoading(true);
-      const parsed = JSON.parse(board);
-      const result = await solvePuzzle(parsed);
+      const boardParsed = JSON.parse(board);
+      const transaction = await createSolvePuzzleTransaction(
+        boardParsed,
+        publicKey
+      );
+
+      const signedTransaction = await signTransaction?.(transaction);
+      if (!signedTransaction) {
+        return null;
+      }
+
+      const signature = await connection.sendTransaction(signedTransaction);
+      const result = await parsePuzzleResponse(signature);
+
       setSolution(result);
-      setLoading(false);
     } catch (e: any) {
+      console.log("🚀 ~ handleSolve ~ e:", e);
       if (e.message.includes("JSON")) {
-        toast.toast({
+        return toast.toast({
           variant: "destructive",
           title: "Invalid JSON",
           description: "Please provide a valid JSON board",
         });
-      } else {
-        toast.toast({
+      }
+
+      if (e.message.includes("The user rejected the request")) {
+        return toast.toast({
           variant: "destructive",
           title: "Error",
-          description: "Something went wrong, please try again!",
+          description: "Please approve the transaction in your wallet",
         });
       }
 
+      toast.toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Something went wrong, please try again!",
+      });
+    } finally {
       setLoading(false);
     }
   };
@@ -53,7 +86,7 @@ export default function Solver() {
           placeholder="Place your board game here"
         />
 
-        <Button className="mt-4 w-full" onClick={handleSolve}>
+        <Button className="mt-4 w-full" disabled={!board} onClick={handleSolve}>
           {loading ? <LoaderCircleIcon className="animate-spin" /> : "Solve"}
         </Button>
       </div>

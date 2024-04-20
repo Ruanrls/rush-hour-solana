@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ToastProvider } from "@/components/ui/toast";
 import { Toaster } from "@/components/ui/toaster";
+import Providers from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,8 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={cn(inter.className, "bg-slate-200")}>
-        <Toaster />
-        <ToastProvider>{children}</ToastProvider>
+        <Providers>
+          <Toaster />
+          <ToastProvider>{children}</ToastProvider>
+        </Providers>
       </body>
     </html>
   );
